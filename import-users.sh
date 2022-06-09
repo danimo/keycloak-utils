@@ -29,10 +29,10 @@ process_result() {
 }
 
 kc_login() {
-  read -p "Base URL (e.g: https://myhostname/auth): " base_url
-  read -p "Realm: " realm
-  read -p "Client ID (create this client in the above Keycloak realm): " client_id
-  read -p "Admin username: " admin_id
+  [ -z "$base_url" ]  && read -p "Base URL (e.g: https://myhostname/auth): " base_url
+  [ -z "$realm" ]     && read -p "Realm: " realm
+  [ -z "$client_id" ] && read -p "Client ID (create this client in the above Keycloak realm): " client_id
+  [ -z "$admin_id" ]  && read -p "Admin username: " admin_id
   read -s -p "Admin Password: " admin_pwd; echo
 
   result=$(curl --write-out " %{http_code}" -s -k --request POST \
@@ -198,17 +198,45 @@ delete_accts(){
 #### Main
 if [ $# -lt 1 ]; then
   echo "Keycloak account admin script"
-  echo "Usage: $0 [--test | --delete | --import csv_file]"
+  echo "Usage: $0 [options] [--test | --delete | --import csv_file]"
+  echo
+  echo "Options:"
+  echo "  -b, --base-url <url>          URL to the endpoint, including /auth"
+  echo "  -r, --realm <realm>           realm id"
+  echo "  -c, --client-id <client id>   client id within <realm>"
+  echo "  -i, --admin-id <admin id>     user with admin role"
   exit 1
 fi
+
+while [ -n "$1" ]; do
 
 flag=$1
 
 case $flag in
+  "-b" | "--base-url" )
+    base_url="$2"
+    shift
+    shift
+    ;;
+  "-r" | "--realm" )
+    realm="$2"
+    shift
+    shift
+    ;;
+  "-c" | "--client-id" )
+    client_id="$2"
+    shift
+    shift
+    ;;
+  "-i" | "--admin-id" )
+    admin_id="$2"
+    shift
+    shift
+    ;;
   "--test" )
     unit_test
     ;;
-        "--delete" )
+  "--delete" )
     csv_file="$2"
     if [ -z "$csv_file" ]; then
       echo "Error: missing 'csv_file' argument"
@@ -216,9 +244,9 @@ case $flag in
     fi
     delete_accts $csv_file
     ;;
-        "--lookup" )
-          kc_login
-                ;;
+  "--lookup" )
+    kc_login
+    ;;
   "--import")
     csv_file="$2"
     if [ -z "$csv_file" ]; then
@@ -231,6 +259,10 @@ case $flag in
     echo "Unrecognised flag '$flag'"
     exit 1
     ;;
+
+
 esac
+
+done
 
 exit 0
