@@ -7,6 +7,7 @@ refresh_token=""
 userid=""
 realm=""
 client_id=""
+sep=","
 
 #### Helpers
 process_result() {
@@ -173,8 +174,9 @@ import_accts() {
 
   # Import accounts line-by-line
   while read -r line; do
-    IFS=',' read -ra arr <<< "$line"
+    IFS="$sep" read -ra arr <<< "$line"
 
+    echo "${arr[0]}#${arr[1]}#${arr[2]}#${arr[3]}"
     kc_create_user "${arr[0]}" "${arr[1]}" "${arr[2]}" "${arr[3]}"
 
     [ $? -ne 0 ] || kc_set_pwd "$userid" "${arr[4]}"  #skip if kc_create_user failed
@@ -188,7 +190,7 @@ delete_accts(){
 
         kc_login
   while read -r line; do
-    IFS=',' read -ra arr <<< "$line"
+    IFS="$sep" read -ra arr <<< "$line"
           kc_lookup_username "${arr[2]}"
           kc_delete_user $userid
   done < "$csv_file"
@@ -246,6 +248,11 @@ case $flag in
     ;;
   "--lookup" )
     kc_login
+    ;;
+  "--seperator" )
+    sep=$2
+    shift
+    shift
     ;;
   "--import")
     csv_file="$2"
